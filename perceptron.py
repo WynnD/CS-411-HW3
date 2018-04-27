@@ -52,12 +52,27 @@ class PerceptronClassifier:
         # DO NOT ZERO OUT YOUR WEIGHTS BEFORE STARTING TRAINING, OR
         # THE AUTOGRADER WILL LIKELY DEDUCT POINTS.
 
+        '''
+        self.weights is a map from (0-9)->weight
+        trainingData is an array of maps from pixel->value
+        self.features is an array of pixel coordinates
+        '''
+
         for iteration in range(self.max_iterations):
             print "Starting iteration ", iteration, "..."
+            print self.weights
             for i in range(len(trainingData)):
                 correctLabel = trainingLabels[i]
-                data = trainingData[i]
-                
+                x = trainingData[i]
+
+                for f in self.features:
+                    score = 0
+                    trainingData[f] * self.weights[f]
+
+                if ans != correctLabel:
+                    self.weights[correctLabel] += f_x
+                    self.weights[ans] -= f_x
+
                 util.raiseNotDefined()
 
     def classify(self, data):
