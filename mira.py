@@ -60,8 +60,70 @@ class MiraClassifier:
         datum is a counter from features to values for those features
         representing a vector of values.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        labels = self.weights.keys()
+        weight_values = {} # c_val => weights
+        right_answers = util.Counter()  # c_val => # wrong
+        for c in Cgrid:
+            weights = self.weights
+            for iteration in range(self.max_iterations):
+                print "Starting iteration ", iteration, "..."
+                for i in range(len(trainingData)):
+                    correctLabel = trainingLabels[i]
+                    featureValues = trainingData[i].copy()
+
+                    scores = util.Counter()
+                    for label in labels:
+                        score = 0
+                        for f in self.features:
+                            score += featureValues[f] * self.weights[label][f]
+
+                        scores[label] = score
+
+                    ans = scores.argMax()
+
+                    tau = self.weights[ans] - self.weights[correctLabel]
+                    tau *= featureValues
+                    tau += 1.0
+                    denom = (2.0 * (featureValues * featureValues))
+                    tau /= denom
+
+                    tau = min(tau, c)
+                    featureValues.multiplyAll(tau)
+                    if ans != correctLabel:
+                        weights[correctLabel] += featureValues
+                        weights[ans] -= featureValues
+
+            weight_values[c] = weights
+            
+            for i in range(len(validationData)):
+                correctLabel = validationLabels[i]
+                featureValues = validationData[i].copy()
+
+                scores = util.Counter()
+                for label in labels:
+                    score = 0
+                    for f in self.features:
+                        score += featureValues[f] * self.weights[label][f]
+
+                    scores[label] = score
+
+                ans = scores.argMax()
+                
+                '''
+                tau = self.weights[ans] - self.weights[correctLabel]
+                tau *= featureValues
+                tau += 1.0
+                tau /= (2.0 * (featureValues * featureValues))
+
+                tau = min(tau, c)
+                featureValues.multiplyAll(tau)
+                '''
+                if ans == correctLabel:
+                    right_answers[c] += 1
+        
+        max_c = right_answers.argMax()
+        self.weights = weight_values[max_c]
 
     def classify(self, data ):
         """
