@@ -51,29 +51,35 @@ class PerceptronClassifier:
         self.features = trainingData[0].keys()  # could be useful later
         # DO NOT ZERO OUT YOUR WEIGHTS BEFORE STARTING TRAINING, OR
         # THE AUTOGRADER WILL LIKELY DEDUCT POINTS.
-
+        labels = self.weights.keys()
         '''
-        self.weights is a map from (0-9)->weight
+        self.weights is a map from (0-9)->feature->weight
         trainingData is an array of maps from pixel->value
         self.features is an array of pixel coordinates
+        '''
+        '''
+        for each label in trainingLabels, loop through each feature in trainingData
         '''
 
         for iteration in range(self.max_iterations):
             print "Starting iteration ", iteration, "..."
-            print self.weights
             for i in range(len(trainingData)):
                 correctLabel = trainingLabels[i]
-                x = trainingData[i]
+                featureValues = trainingData[i]
 
-                for f in self.features:
+                scores = util.Counter()
+                for label in labels:
                     score = 0
-                    trainingData[f] * self.weights[f]
+                    for f in self.features:
+                        score += featureValues[f] * self.weights[label][f]
+
+                    scores[label] = score
+
+                ans = scores.argMax()
 
                 if ans != correctLabel:
-                    self.weights[correctLabel] += f_x
-                    self.weights[ans] -= f_x
-
-                util.raiseNotDefined()
+                    self.weights[correctLabel] += featureValues
+                    self.weights[ans] -= featureValues
 
     def classify(self, data):
         """
@@ -94,9 +100,11 @@ class PerceptronClassifier:
         """
         Returns a list of the 100 features with the greatest weight for some label
         """
+        weights = self.weights[label]
         featuresWeights = []
-
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        for i in range(0,100):
+            x = weights.argMax()
+            featuresWeights.append(x)
+            del weights[x]
 
         return featuresWeights
