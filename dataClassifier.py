@@ -109,7 +109,7 @@ def smallBump(datum):
         bumpSize += 1
         x += 1
 
-    toReturn = int(bumpSize < DIGIT_DATUM_WIDTH/5)
+    toReturn = int(bumpSize < DIGIT_DATUM_WIDTH/3)
     return toReturn
 
 
@@ -125,7 +125,7 @@ def bigBump(datum):
         bumpSize += 1
         x += 1
 
-    toReturn = int(bumpSize > DIGIT_DATUM_WIDTH/4 and bumpSize <= DIGIT_DATUM_WIDTH/3)
+    toReturn = int(bumpSize >= DIGIT_DATUM_WIDTH/3 and bumpSize <= DIGIT_DATUM_WIDTH/2)
     return toReturn
 
 def veryBigBump(datum):
@@ -140,13 +140,12 @@ def veryBigBump(datum):
         bumpSize += 1
         x += 1
 
-    toReturn = int(bumpSize > DIGIT_DATUM_WIDTH/3)
+    toReturn = int(bumpSize > DIGIT_DATUM_WIDTH/2)
     return toReturn
 
-def thinTop(datum):
+def thin(datum, y):
     width = 1
 
-    y = 2
     x = 0
     while datum.getPixel(x, y) == 0 and x < DIGIT_DATUM_WIDTH-1:
         x += 1
@@ -155,13 +154,12 @@ def thinTop(datum):
         width += 1
         x += 1
 
-    toReturn = int(width <= DIGIT_DATUM_WIDTH*.2)
+    toReturn = int(width <= DIGIT_DATUM_WIDTH/3)
     return toReturn
 
-def wideTop(datum):
+def wide(datum, y):
     width = 1
 
-    y = 2
     x = 0
     while datum.getPixel(x, y) == 0 and x < DIGIT_DATUM_WIDTH-1:
         x += 1
@@ -170,13 +168,12 @@ def wideTop(datum):
         width += 1
         x += 1
 
-    toReturn = int(width > DIGIT_DATUM_WIDTH*.2 and width <= DIGIT_DATUM_WIDTH*.5)
+    toReturn = int(width > DIGIT_DATUM_WIDTH/3 and width <= DIGIT_DATUM_WIDTH/2)
     return toReturn
 
-def veryWideTop(datum):
+def veryWide(datum, y):
     width = 1
 
-    y = 2
     x = 0
     while datum.getPixel(x, y) == 0 and x < DIGIT_DATUM_WIDTH-1:
         x += 1
@@ -185,13 +182,12 @@ def veryWideTop(datum):
         width += 1
         x += 1
 
-    toReturn = int(width > DIGIT_DATUM_WIDTH*.5)
+    toReturn = int(width > DIGIT_DATUM_WIDTH/2)
     return toReturn
 
-def thinBottom(datum):
+def thinBottom(datum, y):
     width = 1
 
-    y = 2
     x = 0
     while datum.getPixel(x, y) == 0 and x < DIGIT_DATUM_WIDTH-1:
         x += 1
@@ -200,13 +196,12 @@ def thinBottom(datum):
         width += 1
         x += 1
 
-    toReturn = int(width <= DIGIT_DATUM_WIDTH*.2)
+    toReturn = int(width <= DIGIT_DATUM_WIDTH*.3)
     return toReturn
 
-def wideBottom(datum):
+def wideBottom(datum, y):
     width = 1
 
-    y = DIGIT_DATUM_HEIGHT-2
     x = 0
     while datum.getPixel(x, y) == 0 and x < DIGIT_DATUM_WIDTH-1:
         x += 1
@@ -215,13 +210,12 @@ def wideBottom(datum):
         width += 1
         x += 1
 
-    toReturn = int(width > DIGIT_DATUM_WIDTH*.2 and width <= DIGIT_DATUM_WIDTH*.5)
+    toReturn = int(width > DIGIT_DATUM_WIDTH*.3 and width <= DIGIT_DATUM_WIDTH*.5)
     return toReturn
 
-def veryWideBottom(datum):
+def veryWideBottom(datum, y):
     width = 1
 
-    y = DIGIT_DATUM_WIDTH-2
     x = 0
     while datum.getPixel(x, y) == 0 and x < DIGIT_DATUM_WIDTH-1:
         x += 1
@@ -248,11 +242,11 @@ def fatLeftHead(datum):
     toReturn = int(bumpSize > DIGIT_DATUM_WIDTH/3)
     return toReturn
 
-def fourRowsSixColumns(datum, row, column):
-    row_size = DIGIT_DATUM_HEIGHT/20
-    col_size = DIGIT_DATUM_WIDTH/8
-    y_start = row * DIGIT_DATUM_HEIGHT/20
-    x_start = column * DIGIT_DATUM_WIDTH/8
+def fourRowsSixColumns(datum, num_rows, num_cols, row, column):
+    row_size = DIGIT_DATUM_HEIGHT/num_rows
+    col_size = DIGIT_DATUM_WIDTH/num_cols
+    y_start = row * DIGIT_DATUM_HEIGHT/num_rows
+    x_start = column * DIGIT_DATUM_WIDTH/num_cols
 
     num_pixels = row_size * col_size
     active_pixels = 0
@@ -306,6 +300,25 @@ def numVerticalLines(datum):
 
     return n
 
+def numStraightVertLines(datum):
+    n = 0
+    for x in range(DIGIT_DATUM_WIDTH):
+        num_pixels_in_col = 0
+        is_line = False
+        for y in range(DIGIT_DATUM_HEIGHT):
+            pixel = datum.getPixel(x, y) > 0
+            if pixel and not is_line:
+                num_pixels_in_col += 1
+                is_line = True
+            elif is_line and not pixel:
+                break
+            elif is_line:
+                num_pixels_in_col += 1
+        if num_pixels_in_col > DIGIT_DATUM_HEIGHT*8:
+            n += 1
+
+    return n
+
 def numHorizontalLines(datum):
     n = 0
     for y in range(DIGIT_DATUM_HEIGHT):
@@ -342,6 +355,10 @@ def numSurfacePoints(datum):
                 right = 0
                 top = 0
                 bottom = 0
+                top_left = 0
+                top_right = 0
+                bot_left = 0
+                bot_right = 0
                 if x > 0:
                     left = datum.getPixel(x-1, y)
                 else:
@@ -359,6 +376,26 @@ def numSurfacePoints(datum):
                     continue
                 if y < DIGIT_DATUM_HEIGHT-1:
                     top = datum.getPixel(x, y+1)
+                else:
+                    n += 1
+                    continue
+                if x > 0 and y > 0:
+                    top_left = datum.getPixel(x-1, y-1)
+                else:
+                    n += 1
+                    continue
+                if x > 0 and y < DIGIT_DATUM_HEIGHT-1:
+                    bot_left = datum.getPixel(x-1, y+1)
+                else:
+                    n += 1
+                    continue
+                if x < DIGIT_DATUM_WIDTH-1 and y < DIGIT_DATUM_HEIGHT-1:
+                    bot_right = datum.getPixel(x+1, y+1)
+                else:
+                    n += 1
+                    continue
+                if x < DIGIT_DATUM_WIDTH-1 and y > 0:
+                    top_right = datum.getPixel(x+1, y-1)
                 else:
                     n += 1
                     continue
@@ -409,6 +446,52 @@ def surroundedPixels(datum):
                 ''' 
     return n
 
+def leftStem(datum):
+    y = 6
+    for x in range(DIGIT_DATUM_WIDTH/2):
+        if datum.getPixel(x,y) > 0:
+            return 1
+    
+    return 0
+
+def boxAnalysis(datum):
+    left = 0
+    right = 0
+    top = 0
+    bottom = 0
+    for i in range(DIGIT_DATUM_WIDTH):
+        for j in range(DIGIT_DATUM_HEIGHT):
+            if datum.getPixel(i, j) > 0:
+                left = i
+            if datum.getPixel(DIGIT_DATUM_WIDTH - i - 1, j) > 0:
+                right = DIGIT_DATUM_WIDTH - i - 1
+
+    for j in range(DIGIT_DATUM_WIDTH):
+        for i in range(DIGIT_DATUM_HEIGHT):
+            if datum.getPixel(i, j) > 0:
+                top = j
+            if datum.getPixel(i, DIGIT_DATUM_HEIGHT - j - 1) > 0:
+                bottom = DIGIT_DATUM_HEIGHT - j - 1
+    
+    width = abs(left-right)
+    height = abs(top-bottom)
+    
+    n_intersects = {'left': 0, 'right': 0, 'top': 0, 'bottom': 0}
+    for i in range(DIGIT_DATUM_WIDTH):
+        if datum.getPixel(i, top) > 0:
+            n_intersects['top'] += 1
+        if datum.getPixel(i, bottom) > 0:
+            n_intersects['bottom'] += 1
+    
+    for j in range(DIGIT_DATUM_HEIGHT):
+        if datum.getPixel(i, left) > 0:
+            n_intersects['left'] += 1
+        if datum.getPixel(i, right) > 0:
+            n_intersects['right'] += 1
+    
+    toReturn = {'width': width, 'height': height, 'n_intersects': n_intersects}
+    return toReturn
+
 def basicFeatureExtractorFace(datum):
     """
     Returns a set of pixel features indicating whether
@@ -424,6 +507,83 @@ def basicFeatureExtractorFace(datum):
             else:
                 features[(x,y)] = 0
     return features
+
+def numHorizontalStems(datum, x):
+    n = 0
+    if x > -1:
+        stem = False
+        counter = 0
+        for j in range(DIGIT_DATUM_HEIGHT):
+            if not stem and datum.getPixel(x, j) > 0:
+                stem = True
+                counter = 1
+            elif stem and datum.getPixel(x, j) == 0:
+                n += 1
+                stem = False
+                counter = 0
+            elif stem and counter > 5:
+                counter = 0
+                stem = False
+            elif stem:
+                counter += 1
+
+    return n
+
+def numVerticalStems(datum, y):
+    n = 0
+    if y > -1:
+        stem = False
+        counter = 0
+        for i in range(DIGIT_DATUM_WIDTH):
+            if not stem and datum.getPixel(i, y) > 0:
+                stem = True
+                counter = 1
+            elif stem and datum.getPixel(i, y) == 0:
+                n += 1
+                stem = False
+                counter = 0
+            elif stem and counter > 5:
+                counter = 0
+                stem = False
+            elif stem:
+                counter += 1
+
+    return n
+
+def rowDensity(datum):
+    densities = []
+    for i in range(DIGIT_DATUM_WIDTH):
+        n = 0
+        for j in range(DIGIT_DATUM_HEIGHT):
+            if datum.getPixel(i, j) > 0:
+                n += 1
+        densities.append(float(n)/DIGIT_DATUM_HEIGHT)
+    return densities
+
+def colDensity(datum):
+    densities = []
+    for j in range(DIGIT_DATUM_HEIGHT):
+        n = 0
+        for i in range(DIGIT_DATUM_WIDTH):
+            if datum.getPixel(i, j) > 0:
+                n += 1
+        densities.append(float(n)/DIGIT_DATUM_HEIGHT)
+    return densities
+
+def topStemOnLeft(datum, top):
+    y = top + 4
+    left = 0
+    right = 0
+    for j in range(y, y+2):
+        for i in range(0, DIGIT_DATUM_WIDTH/2):
+            if datum.getPixel(i, j) > 0:
+                left += 1
+
+        for i in range(DIGIT_DATUM_WIDTH/2, DIGIT_DATUM_WIDTH):
+            if datum.getPixel(i, j) > 0:
+                right += 1
+
+    return int(left > right)
 
 def enhancedFeatureExtractorDigit(datum):
     """
@@ -442,12 +602,7 @@ def enhancedFeatureExtractorDigit(datum):
     features['big_bump'] = veryBigBump(datum)
     features['med_bump'] = bigBump(datum)
     features['sml_bump'] = smallBump(datum)
-    features['wide_top'] = wideTop(datum)
-    features['thin_top'] = thinTop(datum)
-    features['vwide_top'] = veryWideTop(datum)
-    features['wide_bot'] = wideBottom(datum)
-    features['thin_bot'] = thinBottom(datum)
-    features['vwide_bot'] = veryWideBottom(datum)
+
     features['1vline'] = 0
     features['2vline'] = 0
     features['3vline'] = 0
@@ -458,36 +613,56 @@ def enhancedFeatureExtractorDigit(datum):
     features['smallsurface'] = 0
     features['medsurface'] = 0
     features['largesurface'] = 0
-    '''
-    features['vdense'] = 0
-    features['notdense'] = 0
-    features['dense'] = 0
-    '''
+    features['leftstem'] = leftStem(datum)
+    box_analysis = boxAnalysis(datum)
+
+    top = box_analysis['n_intersects']['top']
+    bottom = box_analysis['n_intersects']['bottom']
+
+    features['topStemOnLeft'] = topStemOnLeft(datum, top)
+    features['wide_top'] = wide(datum, top)
+    features['thin_top'] = thin(datum, top)
+    features['vwide_top'] = veryWide(datum, top)
+    features['wide_bot'] = wide(datum, bottom)
+    features['thin_bot'] = thin(datum, bottom)
+    features['vwide_bot'] = veryWide(datum, bottom)
+
     surrounded = surroundedPixels(datum)
-    features['surrounded'] = int(surrounded > 1)
+    features['surrounded'] = int(surrounded > 3)
+
     num_vert_lines = numVerticalLines(datum)
     num_horz_lines = numHorizontalLines(datum)
     surface_points = numSurfacePoints(datum)
     percent_pixels = percentPixels(datum)
-    # print percent_pixels
-    '''
-    if percent_pixels < .1:
-        features['notdense'] = 1
-    elif percent_pixels > .17:
-        features['vdense'] = 1
+
+    features['%d percent coverage' % round(percent_pixels, 1)*100] = 1
+    for i in [x * 0.1 for x in range(0, int(percent_pixels*10))]:
+        features['%d percent coverage' % round(i, 1)*100] = 0
+
+    num_vert_straight_lines = numStraightVertLines(datum)
+
+    features['lotsofstraightlines'] = 0
+    features['3straightlines'] = 0
+    features['2straightlines'] = 0
+    features['1straightlines'] = 0
+    features['nostraightlines'] = 0
+
+    if num_vert_straight_lines > 3:
+        features['lotsofstraightlines'] = 1
+    elif num_vert_straight_lines == 3:
+        features['3straightlines'] = 1
+    elif num_vert_straight_lines == 2:
+        features['2straightlines'] = 1
+    elif num_vert_straight_lines == 1:
+        features['1straightlines'] = 1
     else:
-        features['dense'] = 1
-    '''
+        features['nostraightlines'] = 1
+
     for i in range(8):
         for j in range(20):
-            percent = fourRowsSixColumns(datum, j, i)
+            percent = fourRowsSixColumns(datum, 20, 8, j, i)
             features[('row ' + str(j), 'column ' + str(i))] = int(percent > .15)
 
-    for j in range(8):
-        # percent = row(datum, j)
-        # features['row %d' % j] = int(percent > 0.8)
-        percent = column(datum, j)
-        features['column %d' % j] = int(percent > 0.8)
 
     if num_vert_lines == 1:
         features['1vline'] = 1
@@ -498,19 +673,30 @@ def enhancedFeatureExtractorDigit(datum):
     else:
         features['morethan3vline'] = 1
 
-    if num_horz_lines == 1:
-        features['1hline'] = 1
-    elif num_horz_lines == 2:
-        features['2hline'] = 1
-    else:
-        features['morethan2hline'] = 1
+    bottom_stems = numVerticalStems(datum, box_analysis['n_intersects']['bottom']+6)
+    # print bottom_stems
+    features['%d bottom stems' % bottom_stems] = 1
+    for i in range(bottom_stems):
+        features['%d bottom stems' % bottom_stems] = 0
 
-    if surface_points < 8:
-        features['smallsurface'] = 1
-    elif surface_points > 25:
-        features['largesurface'] = 1
-    else:
-        features['medsurface'] = 1
+    top_stems = numVerticalStems(datum, box_analysis['n_intersects']['top'] - 6)
+    # print 'top stems ' + str(top_stems)
+    features['%d top stems' % top_stems] = 1
+    for i in range(top_stems):
+        features['%d bottom stems' % top_stems] = 0
+
+    col_density = colDensity(datum)
+    row_density = rowDensity(datum)
+
+    for i in range(DIGIT_DATUM_HEIGHT):
+        if col_density[i] > .6:
+            features['col %d dense' % i] = 1
+        else:
+            features['col %d dense' % i] = 0
+        if row_density[i] > .6:
+            features['row %d dense' % i] = 1
+        else:
+            features['row %d dense' % i] = 0
 
     return features
 
@@ -606,7 +792,7 @@ def analysis(classifier, guesses, testLabels, testData, rawTestData, printImage)
             print "Image: "
             print rawTestData[i]
             printImage(classifier.findHighOddsFeatures(truth, prediction))
-            break
+            
 
 
 ## =====================
