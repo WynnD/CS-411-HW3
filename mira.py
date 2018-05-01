@@ -110,15 +110,6 @@ class MiraClassifier:
 
                 ans = scores.argMax()
                 
-                '''
-                tau = self.weights[ans] - self.weights[correctLabel]
-                tau *= featureValues
-                tau += 1.0
-                tau /= (2.0 * (featureValues * featureValues))
-
-                tau = min(tau, c)
-                featureValues.multiplyAll(tau)
-                '''
                 if ans == correctLabel:
                     right_answers[c] += 1
         
