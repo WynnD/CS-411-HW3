@@ -23,6 +23,7 @@ import mira
 import samples
 import sys
 import util
+import math
 from pacman import GameState
 
 TEST_SET_SIZE = 100
@@ -735,14 +736,51 @@ def enhancedFeatureExtractorPacman(state):
         features[action] = util.Counter(features[action], **enhancedPacmanFeatures(state, action))
     return features, state.getLegalActions()
 
+def distToNearestGhost(state):
+    ghostPositions = state.getGhostPositions()
+    pacmanPosition = state.getPacmanPosition()
+    minimum = 10000
+    for pos in ghostPositions:
+        gx, gy = pos
+        px, py = pacmanPosition
+        dx = gx - px
+        dy = gy - py
+        dist = math.sqrt(dy**2 + dx**2)
+        if dist < minimum:
+            minimum = dist
+    return minimum
+
+
+def distToNearestEdibleGhost(state):
+    ghostStates = state.getGhostStates()
+    pacmanPosition = state.getPacmanPosition()
+    minimum = 10000
+    for state in ghostStates:
+        print state
+        '''
+        gx, gy = pos
+        px, py = pacmanPosition
+        dx = gx - px
+        dy = gy - py
+        dist = math.sqrt(dy**2 + dx**2)
+        if dist < minimum:
+            minimum = dist
+    return minimum
+        '''
+
+'''
+def distToNearestFood(state, action):
+'''
+
 def enhancedPacmanFeatures(state, action):
     """
     For each state, this function is called with each legal action.
     It should return a counter with { <feature name> : <feature value>, ... }
     """
     features = util.Counter()
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    successor = state.generatePacmanSuccessor(action)
+    features['distNearestGhost'] = distToNearestGhost(successor)
+    # distToNearestEdibleGhost(state)
     return features
 
 
@@ -788,11 +826,10 @@ def analysis(classifier, guesses, testLabels, testData, rawTestData, printImage)
         if (prediction != truth):
             print "==================================="
             print "Mistake on example %d" % i
-            print "Predicted %d; truth is %d" % (prediction, truth)
+            print "Predicted %s; truth is %s" % (prediction, truth)
             print "Image: "
             print rawTestData[i]
-            printImage(classifier.findHighOddsFeatures(truth, prediction))
-            
+            break            
 
 
 ## =====================
