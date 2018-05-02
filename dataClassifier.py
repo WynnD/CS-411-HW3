@@ -24,7 +24,7 @@ import samples
 import sys
 import util
 import math
-from pacman import GameState
+from pacman import GameState, Directions
 
 TEST_SET_SIZE = 100
 DIGIT_DATUM_WIDTH=28
@@ -736,41 +736,45 @@ def enhancedFeatureExtractorPacman(state):
         features[action] = util.Counter(features[action], **enhancedPacmanFeatures(state, action))
     return features, state.getLegalActions()
 
+def lose(state):
+    return int(state.isLose())
+
+def win(state):
+    return int(state.isWin())
+
+def move(action):
+    return int(action != Directions.STOP)
+
 def distToNearestGhost(state):
     ghostPositions = state.getGhostPositions()
     pacmanPosition = state.getPacmanPosition()
-    minimum = 10000
-    for pos in ghostPositions:
-        gx, gy = pos
-        px, py = pacmanPosition
-        dx = gx - px
-        dy = gy - py
-        dist = math.sqrt(dy**2 + dx**2)
-        if dist < minimum:
-            minimum = dist
-    return minimum
+    if len(ghostPositions) == 0:
+        return 0
+    else:
+        minimum = 10000
+        for pos in ghostPositions:
+            gx, gy = pos
+            px, py = pacmanPosition
+            dx = gx - px
+            dy = gy - py
+            dist = math.sqrt(dy**2 + dx**2)
+            if dist < minimum:
+                minimum = dist
+        return minimum
 
 
 def distToNearestEdibleGhost(state):
-    ghostStates = state.getGhostStates()
-    pacmanPosition = state.getPacmanPosition()
-    minimum = 10000
-    for state in ghostStates:
-        print state
-        '''
-        gx, gy = pos
-        px, py = pacmanPosition
-        dx = gx - px
-        dy = gy - py
-        dist = math.sqrt(dy**2 + dx**2)
-        if dist < minimum:
-            minimum = dist
-    return minimum
-        '''
+    # use AgentState.scaredTimer!!!
+    states = state.getGhostStates()
+    if len(states) != 0 and states[0].scaredTimer <= 0:
+        return 0
+    else:
+        return distToNearestGhost(state)
 
-'''
-def distToNearestFood(state, action):
-'''
+
+def distToNearestFood(state):
+    
+    print state
 
 def enhancedPacmanFeatures(state, action):
     """
@@ -780,7 +784,10 @@ def enhancedPacmanFeatures(state, action):
     features = util.Counter()
     successor = state.generatePacmanSuccessor(action)
     features['distNearestGhost'] = distToNearestGhost(successor)
-    # distToNearestEdibleGhost(state)
+    features['move'] = move(action)
+    features['lose'] = lose(successor)
+    features['win'] = win(successor)
+    distToNearestEdibleGhost(state)
     return features
 
 
