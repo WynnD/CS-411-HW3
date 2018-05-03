@@ -743,16 +743,60 @@ def win(state):
     return int(state.isWin())
 
 def move(action):
-    return int(action != Directions.STOP)
+    if action != Directions.STOP:
+        return 1
+    return -1
 
-def distToNearestGhost(state):
-    ghostPositions = state.getGhostPositions()
+def nearGhost(state):
+    states = state.getGhostStates()
     pacmanPosition = state.getPacmanPosition()
-    if len(ghostPositions) == 0:
-        return 0
-    else:
-        minimum = 10000
-        for pos in ghostPositions:
+    maximum = 0
+    for state in states:
+        pos = state.getPosition()
+        gx, gy = pos
+        px, py = pacmanPosition
+        dx = gx - px
+        dy = gy - py
+        dist = math.sqrt(dy**2 + dx**2)
+        if dist == 0:
+            return 0.5
+        else:
+            inv_dist = 1/dist - 0.5
+            if inv_dist > maximum:
+                maximum = inv_dist
+    return maximum
+
+def distToNearestScaryGhost(state):
+    # use AgentState.scaredTimer!!!
+    states = state.getGhostStates()
+    pacmanPosition = state.getPacmanPosition()
+    maximum = 0
+    for state in states:
+        if state.scaredTimer <= 0:
+            pos = state.getPosition()
+            gx, gy = pos
+            px, py = pacmanPosition
+            dx = gx - px
+            dy = gy - py
+            dist = math.sqrt(dy**2 + dx**2)
+            if dist != 0:
+                inv_dist = 1/dist
+                if inv_dist > maximum:
+                    maximum = inv_dist
+            else:
+                return -1
+
+    return maximum
+
+
+def distToNearestEdibleGhost(state):
+    # use AgentState.scaredTimer!!!
+    states = state.getGhostStates()
+    pacmanPosition = state.getPacmanPosition()
+    minimum = 10000
+    for state in states:
+        if state.scaredTimer > 0:
+            pos = state.getPosition()
             gx, gy = pos
             px, py = pacmanPosition
             dx = gx - px
@@ -760,21 +804,82 @@ def distToNearestGhost(state):
             dist = math.sqrt(dy**2 + dx**2)
             if dist < minimum:
                 minimum = dist
+
+    if minimum < 10000:
         return minimum
+    return 0
 
-
-def distToNearestEdibleGhost(state):
-    # use AgentState.scaredTimer!!!
-    states = state.getGhostStates()
-    if len(states) != 0 and states[0].scaredTimer <= 0:
+def avgDistanceToFood(state):
+    food = state.getFood()
+    pacmanPosition = state.getPacmanPosition()
+    l = food.height
+    w = food.width
+    numbers = []
+    for i in range(w):
+        for j in range(l):
+            if food[i][j]:
+                gx = i
+                gy = j
+                px, py = pacmanPosition
+                dx = gx - px
+                dy = gy - py
+                dist = math.sqrt(dy**2 + dx**2)
+                if dist == 0:
+                    numbers.append(1)
+                else:
+                    inv_dist = 1/dist
+                    numbers.append(inv_dist)
+    if len(numbers) == 0:
         return 0
-    else:
-        return distToNearestGhost(state)
+    return sum(numbers)/float(len(numbers))
 
+def nearCapsule(state):
+    positions = state.getCapsules()
+    pacmanPosition = state.getPacmanPosition()
+    maximum = 0
+    for pos in positions:
+        gx, gy = pos
+        px, py = pacmanPosition
+        dx = gx - px
+        dy = gy - py
+        # print gx, px
+        # print gy, py
+        dist = math.sqrt(dy**2 + dx**2)
+        if dist == 0:
+            return 1
+        else:
+            inv_dist = 1/dist
+            if inv_dist > maximum:
+                maximum = inv_dist
 
-def distToNearestFood(state):
-    
-    print state
+    return maximum
+
+def nearFood(state):
+    food = state.getFood()
+    pacmanPosition = state.getPacmanPosition()
+    l = food.height
+    w = food.width
+    maximum = 0
+    for i in range(w):
+        for j in range(l):
+            if food[i][j]:
+                gx = i
+                gy = j
+                px, py = pacmanPosition
+                dx = gx - px
+                dy = gy - py
+                dist = math.sqrt(dy**2 + dx**2)
+                if dist == 0:
+                    return 1
+                else:
+                    inv_dist = 1/dist
+                    if inv_dist > maximum:
+                        maximum = inv_dist
+
+    return maximum
+
+def capsuleCount(state):
+    return len(state.getCapsules())
 
 def enhancedPacmanFeatures(state, action):
     """
@@ -783,11 +888,15 @@ def enhancedPacmanFeatures(state, action):
     """
     features = util.Counter()
     successor = state.generatePacmanSuccessor(action)
-    features['distNearestGhost'] = distToNearestGhost(successor)
-    features['move'] = move(action)
-    features['lose'] = lose(successor)
-    features['win'] = win(successor)
-    distToNearestEdibleGhost(state)
+    features['nearGhost'] = nearGhost(successor)
+    # features['avgDistFood'] = avgDistanceToFood(successor)
+    features['nearCapsule'] = nearCapsule(successor)/10
+    features['capsuleCount'] = capsuleCount(successor)
+    features['nearFood'] = nearFood(successor)
+    # features['move'] = move(action)
+    # features['capsuleDiff'] = len(successor.getCapsules()) - len(state.getCapsules())
+    features['score'] = successor.getScore()/10000.0
+    # print successor, '\n', features
     return features
 
 
@@ -795,7 +904,7 @@ def contestFeatureExtractorDigit(datum):
     """
     Specify features to use for the minicontest
     """
-    features =  basicFeatureExtractorDigit(datum)
+    features = basicFeatureExtractorDigit(datum)
     return features
 
 def enhancedFeatureExtractorFace(datum):
@@ -803,7 +912,7 @@ def enhancedFeatureExtractorFace(datum):
     Your feature extraction playground for faces.
     It is your choice to modify this.
     """
-    features =  basicFeatureExtractorFace(datum)
+    features = basicFeatureExtractorFace(datum)
     return features
 
 def analysis(classifier, guesses, testLabels, testData, rawTestData, printImage):
@@ -836,8 +945,7 @@ def analysis(classifier, guesses, testLabels, testData, rawTestData, printImage)
             print "Predicted %s; truth is %s" % (prediction, truth)
             print "Image: "
             print rawTestData[i]
-            break            
-
+            break
 
 ## =====================
 ## You don't have to modify any code below.
