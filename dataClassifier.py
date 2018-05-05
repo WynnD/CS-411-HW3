@@ -734,6 +734,7 @@ def enhancedFeatureExtractorPacman(state):
     features = basicFeatureExtractorPacman(state)[0]
     for action in state.getLegalActions():
         features[action] = util.Counter(features[action], **enhancedPacmanFeatures(state, action))
+    # print state, '\n', features, '\n\n'
     return features, state.getLegalActions()
 
 def lose(state):
@@ -745,32 +746,36 @@ def win(state):
 def move(action):
     if action != Directions.STOP:
         return 1
-    return -1
+    return 0
 
 def nearGhost(state):
     states = state.getGhostStates()
+    if len(states) == 0:
+        return 0
     pacmanPosition = state.getPacmanPosition()
-    maximum = 0
+    minimum = 0.0
     for state in states:
         pos = state.getPosition()
         gx, gy = pos
         px, py = pacmanPosition
         dx = gx - px
         dy = gy - py
-        dist = math.sqrt(dy**2 + dx**2)
+        dist = math.sqrt(pow(dy, 2) + pow(dx, 2))
         if dist == 0:
-            return 0.5
+            return -1.0
         else:
-            inv_dist = 1/dist - 0.5
-            if inv_dist > maximum:
-                maximum = inv_dist
-    return maximum
+            inv_dist = -1.0/pow(float(dist), 2)
+            if inv_dist < minimum:
+                minimum = inv_dist
+    return minimum
 
-def distToNearestScaryGhost(state):
+def distToNearestScaredGhost(state):
     # use AgentState.scaredTimer!!!
     states = state.getGhostStates()
+    if len(states) == 0:
+        return 0
     pacmanPosition = state.getPacmanPosition()
-    maximum = 0
+    minimum = 0.0
     for state in states:
         if state.scaredTimer <= 0:
             pos = state.getPosition()
@@ -778,22 +783,24 @@ def distToNearestScaryGhost(state):
             px, py = pacmanPosition
             dx = gx - px
             dy = gy - py
-            dist = math.sqrt(dy**2 + dx**2)
+            dist = math.sqrt(pow(dy, 2) + pow(dx, 2))
             if dist != 0:
-                inv_dist = 1/dist
-                if inv_dist > maximum:
-                    maximum = inv_dist
+                inv_dist = -1.0/pow(float(dist), 2)
+                if inv_dist < minimum:
+                    minimum = inv_dist
             else:
-                return -1
+                return -1.0
 
-    return maximum
+    return minimum
 
 
 def distToNearestEdibleGhost(state):
     # use AgentState.scaredTimer!!!
     states = state.getGhostStates()
+    if len(states) == 0:
+        return 0
     pacmanPosition = state.getPacmanPosition()
-    minimum = 10000
+    minimum = 0.0
     for state in states:
         if state.scaredTimer > 0:
             pos = state.getPosition()
@@ -801,14 +808,17 @@ def distToNearestEdibleGhost(state):
             px, py = pacmanPosition
             dx = gx - px
             dy = gy - py
-            dist = math.sqrt(dy**2 + dx**2)
-            if dist < minimum:
-                minimum = dist
+            dist = math.sqrt(pow(dy, 2) + pow(dx, 2))
+            if dist != 0:
+                inv_dist = -1.0/pow(float(dist), 2)
+                if inv_dist < minimum:
+                    minimum = inv_dist
+            else:
+                return -1.0
 
-    if minimum < 10000:
-        return minimum
-    return 0
+    return minimum
 
+'''
 def avgDistanceToFood(state):
     food = state.getFood()
     pacmanPosition = state.getPacmanPosition()
@@ -832,23 +842,24 @@ def avgDistanceToFood(state):
     if len(numbers) == 0:
         return 0
     return sum(numbers)/float(len(numbers))
+'''
 
 def nearCapsule(state):
     positions = state.getCapsules()
+    if len(positions) == 0:
+        return 0
     pacmanPosition = state.getPacmanPosition()
-    maximum = 0
+    maximum = 0.0
     for pos in positions:
         gx, gy = pos
         px, py = pacmanPosition
         dx = gx - px
         dy = gy - py
-        # print gx, px
-        # print gy, py
-        dist = math.sqrt(dy**2 + dx**2)
+        dist = math.sqrt(pow(dy, 2) + pow(dx, 2))
         if dist == 0:
-            return 1
+            return 1.0
         else:
-            inv_dist = 1/dist
+            inv_dist = 1.0/pow(float(dist), 2)
             if inv_dist > maximum:
                 maximum = inv_dist
 
@@ -856,30 +867,40 @@ def nearCapsule(state):
 
 def nearFood(state):
     food = state.getFood()
+    if state.getNumFood() == 0:
+        return 0
     pacmanPosition = state.getPacmanPosition()
     l = food.height
     w = food.width
-    maximum = 0
-    for i in range(w):
-        for j in range(l):
+    maximum = 0.0
+    for i in range(0,w):
+        for j in range(0,l):
             if food[i][j]:
                 gx = i
                 gy = j
                 px, py = pacmanPosition
                 dx = gx - px
                 dy = gy - py
-                dist = math.sqrt(dy**2 + dx**2)
+                dist = math.sqrt(pow(dy,2) + pow(dx, 2))
                 if dist == 0:
-                    return 1
+                    return 1.0
                 else:
-                    inv_dist = 1/dist
+                    inv_dist = 1.0/pow(float(dist), 2)
                     if inv_dist > maximum:
+                        # print inv_dist
                         maximum = inv_dist
 
     return maximum
 
-def capsuleCount(state):
-    return len(state.getCapsules())
+def numCapsules(state):
+    numCapsules = len(state.getCapsules())
+    '''
+    if numCapsules == 0:
+        return 1
+    else:
+        return 1.0/float(1 + numCapsules)
+    '''
+    return numCapsules
 
 def enhancedPacmanFeatures(state, action):
     """
@@ -890,13 +911,17 @@ def enhancedPacmanFeatures(state, action):
     successor = state.generatePacmanSuccessor(action)
     features['nearGhost'] = nearGhost(successor)
     # features['avgDistFood'] = avgDistanceToFood(successor)
-    features['nearCapsule'] = nearCapsule(successor)/10
-    features['capsuleCount'] = capsuleCount(successor)
+    features['nearCapsule'] = nearCapsule(successor)
+    features['numCapsules'] = numCapsules(successor)
     features['nearFood'] = nearFood(successor)
-    # features['move'] = move(action)
-    # features['capsuleDiff'] = len(successor.getCapsules()) - len(state.getCapsules())
-    features['score'] = successor.getScore()/10000.0
-    # print successor, '\n', features
+    features['closeToEdibleGhost'] = distToNearestEdibleGhost(successor)
+    # features['move'] = move(action) * .1
+    # features['capsuleDiff'] = len(state.getCapsules()) - len(successor.getCapsules())
+    # features['foodDiff'] = successor.getNumFood() - state.getNumFood()
+    '''
+    score change = BAD
+    '''
+    # print successor, '\n', features, '\n\n'
     return features
 
 
