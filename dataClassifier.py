@@ -970,6 +970,7 @@ def analysis(classifier, guesses, testLabels, testData, rawTestData, printImage)
             print "Predicted %s; truth is %s" % (prediction, truth)
             print "Image: "
             print rawTestData[i]
+            classifier.printWeights()
             break
 
 ## =====================
