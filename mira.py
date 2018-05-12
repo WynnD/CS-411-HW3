@@ -89,7 +89,11 @@ class MiraClassifier:
                     tau /= denom
 
                     tau = min(tau, c)
-                    featureValues.multiplyAll(tau)
+                    # featureValues.multiplyAll(tau)
+                    mult = float(tau)
+                    for key in featureValues:
+                        featureValues[key] *= mult
+                    
                     if ans != correctLabel:
                         weights[correctLabel] += featureValues
                         weights[ans] -= featureValues
